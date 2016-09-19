@@ -301,22 +301,23 @@ namespace TFW
         //compare lines
         int line_nr = 1;
         QTextStream astream(&afile);
-        QString aline = astream.readLine();
         QTextStream estream(&efile);
-        QString eline = estream.readLine();
-        while (!aline.isNull() && !eline.isNull())
+        while (!astream.atEnd() && !estream.atEnd())
         {
+            QString aline = astream.readLine();
+            QString eline = estream.readLine();
             if(aline!=eline)
             {
-				return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+                return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
             }
-            aline = astream.readLine();
-            eline = estream.readLine();
             ++line_nr;
         }
 
-        if (!aline.isNull()) return "Actual file '" + actual + "' has more lines than expected file '" + expected + "'!";
-        if (!eline.isNull()) return "Actual file '" + actual + "' has less lines than expected file '" + expected + "'!";
+        //compare rest (ignore lines containing only whitespaces)
+        QString arest = astream.readAll().trimmed();
+        if (!arest.isEmpty()) return "Actual file '" + actual + "' contains more data than expected file '" + expected + "': " + arest;
+        QString erest = estream.readAll().trimmed();
+        if (!erest.isEmpty()) return "Expected file '" + expected + "' contains more data than actual file '" + actual + "': " + erest;
 
         return "";
     }
