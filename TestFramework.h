@@ -286,6 +286,13 @@ namespace TFW
         return "";
     }
 
+    /**
+     * @brief comareFiles
+     * Compares files line by line to check if they are identical
+     * @param actual
+     * @param expected
+     * @return empty string on success, otherwise return the diff
+     */
     inline QString comareFiles(QString actual, QString expected)
     {
         //make file names absolute
@@ -318,6 +325,77 @@ namespace TFW
         if (!arest.isEmpty()) return "Actual file '" + actual + "' contains more data than expected file '" + expected + "': " + arest;
         QString erest = estream.readAll().trimmed();
         if (!erest.isEmpty()) return "Expected file '" + expected + "' contains more data than actual file '" + actual + "': " + erest;
+
+        return "";
+    }
+
+    /**
+     * @brief comareFiles
+     * Compares files line by line to check if they are identical, but uses a delta to check numerics
+     * @param actual
+     * @param expected
+     * @param delta
+     * How much percent deviation should be allowed on numerics
+     * @return empty string on success, otherwise return the diff
+     */
+    inline QString comareFiles(QString actual, QString expected, int delta) {
+       actual = QFileInfo(actual).absoluteFilePath();
+       expected = QFileInfo(expected).absoluteFilePath();
+
+       //open files
+       QFile afile(actual);
+       if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toLatin1() + " for reading!";
+       QFile efile(expected);
+       if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toLatin1() + " for reading!";
+
+       //compare lines
+       int line_nr = 1;
+       QTextStream astream(&afile);
+       QTextStream estream(&efile);
+       while (!astream.atEnd() && !estream.atEnd())
+       {
+           QString aline = astream.readLine();
+           QString eline = estream.readLine();
+           if(aline!=eline)
+           {
+                QStringList a_line_items = aline.split('\t');
+                QStringList e_line_items = aline.split('\t');
+                if (a_line_items.size() != e_line_items.size()) {
+                    throw std::logic_error("Actual line has more columns than expected line.");
+                }
+
+                for (auto i = 0; i<a_line_items.size(); ++i) {
+                    QString a_line_item = a_line_items.at(i);
+                    QString e_line_item = e_line_items.at(i);
+
+                    if (a_line_item==e_line_item) {
+                        // Skip this comparission
+                    } else {
+                        bool a_item_is_float;
+                        float a_line_item_float = a_line_item.toFloat(&a_item_is_float);
+
+                        if (!a_item_is_float) {
+                            return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+                        }
+
+                        bool e_item_is_float;
+                        float e_line_item_float = e_line_item.toFloat(&e_item_is_float);
+
+                        if (e_item_is_float) {
+                            float deviation_value = ((e_line_item_float / 100) * delta);
+
+                            if (!(e_line_item_float - deviation_value <= a_line_item_float <= e_line_item_float + deviation_value)) {
+                                // QByteArray::number will implicitely convert float to double so it's a bit pointless to use the exact results
+                                return "Differing value "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_item_float) + "\nexpected : " + QString::number(e_line_item_float);
+                            }
+                        } else {
+                            throw std::logic_error("Trying to compare a float with something that's not numeric on line: " + QByteArray::number(line_nr));
+                        }
+                    }
+                }
+           }
+           ++line_nr;
+       }
 
         return "";
     }
@@ -560,6 +638,19 @@ namespace TFW
 			return;\
 		}\
 	}
+
+#define COMPARE_FILES_DELTA(actual, expected, delta)\
+        {\
+                QString tfw_result = TFW::comareFiles(actual, expected, delta);\
+                if (tfw_result!="")\
+                {\
+                        TFW::failed() = true;\
+                        TFW::message() = "COMPARE_FILES(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
+                                                   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
+                                                   + "message  : " + tfw_result.toLatin1();\
+                        return;\
+                }\
+        }
 
 #define COMPARE_GZ_FILES(actual, expected)\
 	{\
