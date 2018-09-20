@@ -288,54 +288,11 @@ namespace TFW
 
     /**
      * @brief comareFiles
-     * Compares files line by line to check if they are identical
-     * @param actual
-     * @param expected
-     * @return empty string on success, otherwise return the diff
-     */
-    inline QString comareFiles(QString actual, QString expected)
-    {
-        //make file names absolute
-        actual = QFileInfo(actual).absoluteFilePath();
-        expected = QFileInfo(expected).absoluteFilePath();
-
-        //open files
-        QFile afile(actual);
-        if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toLatin1() + " for reading!";
-        QFile efile(expected);
-        if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toLatin1() + " for reading!";
-
-        //compare lines
-        int line_nr = 1;
-        QTextStream astream(&afile);
-        QTextStream estream(&efile);
-        while (!astream.atEnd() && !estream.atEnd())
-        {
-            QString aline = astream.readLine();
-            QString eline = estream.readLine();
-            if(aline!=eline)
-            {
-                return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
-            }
-            ++line_nr;
-        }
-
-        //compare rest (ignore lines containing only whitespaces)
-        QString arest = astream.readAll().trimmed();
-        if (!arest.isEmpty()) return "Actual file '" + actual + "' contains more data than expected file '" + expected + "': " + arest;
-        QString erest = estream.readAll().trimmed();
-        if (!erest.isEmpty()) return "Expected file '" + expected + "' contains more data than actual file '" + actual + "': " + erest;
-
-        return "";
-    }
-
-    /**
-     * @brief comareFiles
      * Compares files line by line to check if they are identical, but uses a delta to check numerics
      * @param actual
      * @param expected
      * @param delta
-     * How much percent deviation should be allowed on numerics
+     * How much percent deviation should be allowed on numerics. If delta is 0 then it will not be considered.
      * @return empty string on success, otherwise return the diff
      */
     inline QString comareFiles(QString actual, QString expected, int delta) {
@@ -358,6 +315,10 @@ namespace TFW
            QString eline = estream.readLine();
            if(aline!=eline)
            {
+                if (delta == 0) {
+                    return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+                }
+
                 QStringList a_line_items = aline.split('\t');
                 QStringList e_line_items = aline.split('\t');
                 if (a_line_items.size() != e_line_items.size()) {
@@ -389,7 +350,7 @@ namespace TFW
                                 return "Differing value "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_item_float) + "\nexpected : " + QString::number(e_line_item_float);
                             }
                         } else {
-                            throw std::logic_error("Trying to compare a float with something that's not numeric on line: " + QByteArray::number(line_nr));
+                            return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
                         }
                     }
                 }
@@ -628,7 +589,7 @@ namespace TFW
 
 #define COMPARE_FILES(actual, expected)\
 	{\
-		QString tfw_result = TFW::comareFiles(actual, expected);\
+        QString tfw_result = TFW::comareFiles(actual, expected, 0);\
 		if (tfw_result!="")\
 		{\
 			TFW::failed() = true;\
