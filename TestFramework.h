@@ -295,7 +295,8 @@ namespace TFW
      * How much percent deviation should be allowed on numerics. If delta is 0 then it will not be considered.
      * @return empty string on success, otherwise return the diff
      */
-    inline QString comareFiles(QString actual, QString expected, int delta) {
+    inline QString comareFiles(QString actual, QString expected, int delta)
+    {
        actual = QFileInfo(actual).absoluteFilePath();
        expected = QFileInfo(expected).absoluteFilePath();
 
@@ -315,42 +316,38 @@ namespace TFW
            QString eline = estream.readLine();
            if(aline!=eline)
            {
-                if (delta == 0) {
+                //not delta allowed > no numeric comparison
+                if (delta == 0)
+                {
                     return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
                 }
 
+                //numeric comparison
                 QStringList a_line_items = aline.split('\t');
                 QStringList e_line_items = aline.split('\t');
-                if (a_line_items.size() != e_line_items.size()) {
-                    throw std::logic_error("Actual line has more columns than expected line.");
+                if (a_line_items.size() != e_line_items.size())
+                {
+                    return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
                 }
 
-                for (auto i = 0; i<a_line_items.size(); ++i) {
-                    QString a_line_item = a_line_items.at(i);
-                    QString e_line_item = e_line_items.at(i);
+                for (int i=0; i<a_line_items.size(); ++i)
+                {
+                    if (a_line_items[i]!=e_line_items[i])
+                    {
+                        bool a_item_is_numeric;
+                        float a_line_value = a_line_items[i].toFloat(&a_item_is_numeric);
 
-                    if (a_line_item==e_line_item) {
-                        // Skip this comparission
-                    } else {
-                        bool a_item_is_float;
-                        float a_line_item_float = a_line_item.toFloat(&a_item_is_float);
+                        bool e_item_is_numeric;
+                        float e_line_value = e_line_items[i].toFloat(&e_item_is_numeric);
 
-                        if (!a_item_is_float) {
+                        if (!a_item_is_numeric || !e_item_is_numeric)
+                        {
                             return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
                         }
 
-                        bool e_item_is_float;
-                        float e_line_item_float = e_line_item.toFloat(&e_item_is_float);
-
-                        if (e_item_is_float) {
-                            float deviation_value = ((e_line_item_float / 100) * delta);
-
-                            if (!(e_line_item_float - deviation_value <= a_line_item_float <= e_line_item_float + deviation_value)) {
-                                // QByteArray::number will implicitely convert float to double so it's a bit pointless to use the exact results
-                                return "Differing value "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_item_float) + "\nexpected : " + QString::number(e_line_item_float);
-                            }
-                        } else {
-                            return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+                        if (fabs(a_line_value-e_line_value)/e_line_value > delta/100.0)
+                        {
+                         return "Differing numeric value in line "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_value) + "\nexpected : " + QString::number(e_line_value);
                         }
                     }
                 }
