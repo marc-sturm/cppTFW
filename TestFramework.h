@@ -324,7 +324,7 @@ namespace TFW
 
                 //numeric comparison
                 QStringList a_line_items = aline.split('\t');
-                QStringList e_line_items = aline.split('\t');
+                QStringList e_line_items = eline.split('\t');
                 if (a_line_items.size() != e_line_items.size())
                 {
                     return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
