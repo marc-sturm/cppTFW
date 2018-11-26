@@ -300,22 +300,22 @@ namespace TFW
        actual = QFileInfo(actual).absoluteFilePath();
        expected = QFileInfo(expected).absoluteFilePath();
 
-       //open files
-       QFile afile(actual);
-       if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toLatin1() + " for reading!";
-       QFile efile(expected);
-       if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toLatin1() + " for reading!";
+        //open files
+        QFile afile(actual);
+        if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toLatin1() + " for reading!";
+        QFile efile(expected);
+        if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toLatin1() + " for reading!";
 
-       //compare lines
-       int line_nr = 1;
-       QTextStream astream(&afile);
-       QTextStream estream(&efile);
-       while (!astream.atEnd() && !estream.atEnd())
-       {
-           QString aline = astream.readLine();
-           QString eline = estream.readLine();
-           if(aline!=eline)
-           {
+        //compare lines
+        int line_nr = 1;
+        QTextStream astream(&afile);
+        QTextStream estream(&efile);
+        while (!astream.atEnd() && !estream.atEnd())
+        {
+            QString aline = astream.readLine();
+            QString eline = estream.readLine();
+            if(aline!=eline)
+            {
                 //not delta allowed > no numeric comparison
                 if (delta == 0)
                 {
@@ -347,19 +347,24 @@ namespace TFW
 
                         if (fabs(a_line_value-e_line_value)/e_line_value > delta/100.0)
                         {
-                         return "Differing numeric value in line "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_value) + "\nexpected : " + QString::number(e_line_value);
+                            return "Differing numeric value in line "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_value) + "\nexpected : " + QString::number(e_line_value);
                         }
                     }
                 }
-           }
-           ++line_nr;
-       }
+            }
+            ++line_nr;
+        }
+
+        //compare rest (ignore lines containing only whitespaces)
+        QString arest = astream.readAll().trimmed();
+        if (!arest.isEmpty()) return "Actual file '" + actual + "' contains more data than expected file '" + expected + "': " + arest;
+        QString erest = estream.readAll().trimmed();
+        if (!erest.isEmpty()) return "Expected file '" + expected + "' contains more data than actual file '" + actual + "': " + erest;
 
         return "";
     }
 
-
-	inline QString comareFilesGZ(QString actual, QString expected)
+    inline QString comareFilesGZ(QString actual, QString expected)
     {
 		//init buffer
 		QByteArray buffer(1024, ' ');
