@@ -291,11 +291,11 @@ namespace TFW
      * Compares files line by line to check if they are identical, but uses a delta to check numerics
      * @param actual
      * @param expected
-     * @param delta
-     * How much percent deviation should be allowed on numerics. If delta is 0 then it will not be considered.
+     * @param delta How much absolute deviation should be allowed for numeric values. If delta is 0 then it will not be considered.
+     * @param delta_is_percentage If 'true', the delta is interpreted as percentage in the range [0-100] instead of as absolute value.
      * @return empty string on success, otherwise return the diff
      */
-    inline QString comareFiles(QString actual, QString expected, int delta)
+    inline QString comareFiles(QString actual, QString expected, double delta, bool delta_is_percentage, char separator)
     {
        actual = QFileInfo(actual).absoluteFilePath();
        expected = QFileInfo(expected).absoluteFilePath();
@@ -317,17 +317,17 @@ namespace TFW
             if(aline!=eline)
             {
                 //not delta allowed > no numeric comparison
-                if (delta == 0)
+                if (delta == 0.0)
                 {
                     return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
                 }
 
                 //numeric comparison
-                QStringList a_line_items = aline.split('\t');
-                QStringList e_line_items = eline.split('\t');
+                QStringList a_line_items = aline.split(separator);
+                QStringList e_line_items = eline.split(separator);
                 if (a_line_items.size() != e_line_items.size())
                 {
-                    return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+                    return "Differing line "  + QByteArray::number(line_nr) + " (different token count)\nactual   : " + aline + "\nexpected : " + eline;
                 }
 
                 for (int i=0; i<a_line_items.size(); ++i)
@@ -342,12 +342,24 @@ namespace TFW
 
                         if (!a_item_is_numeric || !e_item_is_numeric)
                         {
-                            return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+                            return "Differing line "  + QByteArray::number(line_nr) + " (non-numeric difference)\nactual   : " + aline + "\nexpected : " + eline;
                         }
 
-                        if (fabs(a_line_value-e_line_value)/e_line_value > delta/100.0)
+                        double abs_diff = fabs(a_line_value-e_line_value);
+                        if (delta_is_percentage)
                         {
-                            return "Differing numeric value in line "  + QByteArray::number(line_nr) + "\nactual   : " + QString::number(a_line_value) + "\nexpected : " + QString::number(e_line_value);
+                            double rel_diff = fabs(a_line_value-e_line_value)/e_line_value;
+                            if (rel_diff > delta/100.0)
+                            {
+                                return "Differing numeric value in line "  + QByteArray::number(line_nr) + " (relative difference too big)\nactual   : " + QString::number(a_line_value) + "\nexpected : " + QString::number(e_line_value) + "\ndelta rel: " + QString::number(rel_diff, 'g', 4);
+                            }
+                        }
+                        else
+                        {
+                            if (abs_diff > delta)
+                            {
+                                return "Differing numeric value in line "  + QByteArray::number(line_nr) + " (absolute difference too big)\nactual   : " + QString::number(a_line_value) + "\nexpected : " + QString::number(e_line_value)+ "\ndelta abs: " + QString::number(abs_diff, 'g', 4);
+                            }
                         }
                     }
                 }
@@ -591,7 +603,7 @@ namespace TFW
 
 #define COMPARE_FILES(actual, expected)\
 	{\
-        QString tfw_result = TFW::comareFiles(actual, expected, 0);\
+        QString tfw_result = TFW::comareFiles(actual, expected, 0.0, true, '\t');\
 		if (tfw_result!="")\
 		{\
 			TFW::failed() = true;\
@@ -602,13 +614,13 @@ namespace TFW
 		}\
 	}
 
-#define COMPARE_FILES_DELTA(actual, expected, delta)\
+#define COMPARE_FILES_DELTA(actual, expected, delta, delta_is_percentage, separator)\
         {\
-                QString tfw_result = TFW::comareFiles(actual, expected, delta);\
+                QString tfw_result = TFW::comareFiles(actual, expected, delta, delta_is_percentage, separator);\
                 if (tfw_result!="")\
                 {\
                         TFW::failed() = true;\
-                        TFW::message() = "COMPARE_FILES(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
+                        TFW::message() = "COMPARE_FILES_DELTA(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ", " + QByteArray(#delta) + ", " + QByteArray(#delta_is_percentage) + ", " + QByteArray(#separator) + ") failed\n"\
                                                    + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
                                                    + "message  : " + tfw_result.toLatin1();\
                         return;\
