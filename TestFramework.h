@@ -15,7 +15,7 @@
 #include <QMetaObject>
 #include <QMetaMethod>
 #include "zlib.h"
-#include "math.h"
+#include <cmath>
 #include "Exceptions.h"
 #include "Helper.h"
 
