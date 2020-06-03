@@ -7,7 +7,7 @@
 
 #define VCF_IS_VALID(vcf_file)\
 {\
-    QString ref_file = Settings::string("reference_genome");\
+    QString ref_file = Settings::string("reference_genome", true);\
     if (ref_file!="")\
     {\
         QString output;\
