@@ -277,7 +277,7 @@ namespace TFW
         int exit_code = process.exitCode();
         if (!started || !finished || (!ignore_error_code && exit_code!=0))
         {
-            QByteArray result = "edit code: " + QByteArray::number(exit_code);
+            QByteArray result = "exit code: " + QByteArray::number(exit_code);
             QFile tmp_file(log_file);
             tmp_file.open(QFile::ReadOnly|QFile::Text);
             result += "\ntool output:\n" + tmp_file.readAll().trimmed();
