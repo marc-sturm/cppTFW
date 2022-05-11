@@ -50,13 +50,13 @@ namespace TFW
 
     inline QByteArray findTestDataFile(QByteArray sourcefile, QByteArray testfile)
     {
-        QByteArray path = QFileInfo(sourcefile).path().toLatin1() + "/" + testfile;
+        QByteArray path = QFileInfo(sourcefile).canonicalPath().toLatin1() + "/" + testfile;
         path.replace("\\", "/").replace("//", "/");
         while(path.contains('/') && !QFile::exists(path))
         {
             path = path.mid(path.indexOf('/')+1);
         }
-		if (!QFile::exists(path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "'!");
+        if (!QFile::exists(path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "'!");
         return  path;
     }
 
