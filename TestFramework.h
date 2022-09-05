@@ -50,7 +50,7 @@ namespace TFW
 
     inline QByteArray findTestDataFile(QByteArray sourcefile, QByteArray testfile)
     {
-        QByteArray path = QFileInfo(sourcefile).path().toLatin1() + "/" + testfile;
+        QByteArray path = QFileInfo(sourcefile).path().toUtf8() + "/" + testfile;
         path.replace("\\", "/").replace("//", "/");
         while(path.contains('/') && !QFile::exists(path))
         {
@@ -109,7 +109,7 @@ namespace TFW
 		parser.addOption(QCommandLineOption("l", "Test case list to execute.", "l"));
 		parser.addHelpOption();
 		parser.process(core_app);
-		QByteArray s_filter = parser.value("s").toLatin1();
+		QByteArray s_filter = parser.value("s").toUtf8();
 		QStringList l_filter;
 		if (parser.value("l")!="")
 		{
@@ -302,9 +302,9 @@ namespace TFW
 
         //open files
         QFile afile(actual);
-        if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toLatin1() + " for reading!";
+        if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toUtf8() + " for reading!";
         QFile efile(expected);
-        if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toLatin1() + " for reading!";
+        if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toUtf8() + " for reading!";
 
         //compare lines
         int line_nr = 1;
@@ -386,9 +386,9 @@ namespace TFW
 		expected = QFileInfo(expected).absoluteFilePath();
 
 		//open streams
-		gzFile streama = gzopen(actual.toLatin1().data(),"rb");
+		gzFile streama = gzopen(actual.toUtf8().data(),"rb");
 		if (streama == NULL)  return "Could not open file '" + actual + "' for reading!";
-		gzFile streame = gzopen(expected.toLatin1().data(),"rb");
+		gzFile streame = gzopen(expected.toUtf8().data(),"rb");
 		if (streame == NULL)  return "Could not open file '" + expected + "' for reading!";
 
 		//compare lines
@@ -536,8 +536,8 @@ namespace TFW
     {\
         TFW::failed() = true;\
 		TFW::message() = "S_EQUAL(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
-					   + "actual   : " + QString(actual).toLatin1() + "\n"\
-					   + "expected : " + QString(expected).toLatin1() + "\n"\
+					   + "actual   : " + QString(actual).toUtf8() + "\n"\
+					   + "expected : " + QString(expected).toUtf8() + "\n"\
 					   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__);\
         return;\
     }
@@ -583,7 +583,7 @@ namespace TFW
 			TFW::failed() = true;\
 			TFW::message() = "EXECUTE(" + QByteArray(#toolname) + ", " + QByteArray(#arguments) + ") failed\n"\
 						   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-						   + "message  : " + tfw_result.toLatin1();\
+						   + "message  : " + tfw_result.toUtf8();\
 			return;\
 		}\
 	}
@@ -596,7 +596,7 @@ namespace TFW
 			TFW::failed() = true;\
 			TFW::message() = "EXECUTE_FAIL(" + QByteArray(#toolname) + ", " + QByteArray(#arguments) + ") failed\n"\
 						   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-						   + "message  : " + tfw_result.toLatin1();\
+						   + "message  : " + tfw_result.toUtf8();\
 			return;\
 		}\
 	}
@@ -609,7 +609,7 @@ namespace TFW
 			TFW::failed() = true;\
 			TFW::message() = "COMPARE_FILES(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
 						   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-						   + "message  : " + tfw_result.toLatin1();\
+						   + "message  : " + tfw_result.toUtf8();\
 			return;\
 		}\
 	}
@@ -622,7 +622,7 @@ namespace TFW
                         TFW::failed() = true;\
                         TFW::message() = "COMPARE_FILES_DELTA(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ", " + QByteArray(#delta) + ", " + QByteArray(#delta_is_percentage) + ", " + QByteArray(#separator) + ") failed\n"\
                                                    + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-                                                   + "message  : " + tfw_result.toLatin1();\
+                                                   + "message  : " + tfw_result.toUtf8();\
                         return;\
                 }\
         }
@@ -635,7 +635,7 @@ namespace TFW
 			TFW::failed() = true;\
 			TFW::message() = "COMPARE_GZ_FILES(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
 						   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-						   + "message  : " + tfw_result.toLatin1();\
+						   + "message  : " + tfw_result.toUtf8();\
 			return;\
 		}\
 	}
@@ -648,7 +648,7 @@ namespace TFW
 			TFW::failed() = true;\
 			TFW::message() = "REMOVE_LINES(" + QByteArray(#filename) + ", " + QByteArray(#regexp) + ") failed\n"\
 						   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-						   + "message  : " + tfw_result.toLatin1();\
+						   + "message  : " + tfw_result.toUtf8();\
 			return;\
 		}\
 	}

@@ -17,7 +17,7 @@
             TFW::failed() = true;\
             TFW::message() = "CHECK_VCF_VALID(" + QByteArray(#vcf_file) + ") failed\n"\
             + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-            + "message  : " + output.toLatin1();\
+            + "message  : " + output.toUtf8();\
             return;\
         }\
     }\
