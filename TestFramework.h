@@ -107,6 +107,7 @@ namespace TFW
 		QCommandLineParser parser;
 		parser.addOption(QCommandLineOption("s", "Test case string filter for test cases.", "s"));
 		parser.addOption(QCommandLineOption("l", "Test case list to execute.", "l"));
+		parser.addOption(QCommandLineOption("d", "Enable debug output."));
 		parser.addHelpOption();
 		parser.process(core_app);
 		QByteArray s_filter = parser.value("s").toUtf8();
@@ -124,6 +125,7 @@ namespace TFW
 				return -1;
 			}
 		}
+		bool debug_output = parser.isSet("d");
 
         //create folder for test output data
         QDir(".").mkdir("out");
@@ -179,7 +181,12 @@ namespace TFW
                 timer.restart();
                 try
                 {
-                    invoked = object->invokeMethod(test, method.name());
+					if (debug_output)
+					{
+						outstream.write("Performing " + test_name + ":" + method.name() + "\n");
+						outstream.flush();
+					}
+					invoked = object->invokeMethod(test, method.name());
                 }
                 catch (Exception& e)
                 {
