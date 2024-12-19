@@ -595,6 +595,7 @@ namespace TFW
 		}\
 	}
 
+//Allows execute without propagating the error. Doesn't check for/enforce return code 1.
 #define EXECUTE_FAIL(toolname, arguments) \
 	{\
 		QString tfw_result = TFW::executeTool(toolname, arguments, true, __FILE__, __LINE__);\
