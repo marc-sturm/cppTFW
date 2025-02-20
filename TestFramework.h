@@ -135,7 +135,7 @@ namespace TFW
         outstream.open(stdout, QFile::WriteOnly);
 
         //run tests
-        QTime timer;
+        QElapsedTimer timer;
         int c_failed = 0;
         int c_skipped = 0;
         int c_passed = 0;
