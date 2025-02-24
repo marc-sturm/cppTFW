@@ -14,6 +14,7 @@
 #include <QDebug>
 #include <QMetaObject>
 #include <QMetaMethod>
+#include <QRegularExpression>
 #include "zlib.h"
 #include <cmath>
 #include "Exceptions.h"
@@ -428,7 +429,7 @@ namespace TFW
 		return "";
     }
 
-    inline QString removeLinesMatching(QString filename, QRegExp regexp)
+    inline QString removeLinesMatching(QString filename, QRegularExpression regexp)
     {
         QFile file(filename);
         QList<QByteArray> output;
@@ -438,7 +439,7 @@ namespace TFW
         while(!file.atEnd())
         {
             QByteArray line = file.readLine();
-            if (regexp.indexIn(line)!=-1) continue;
+            if (regexp.match(line).hasMatch()) continue;
             output.append(line);
         }
         file.close();

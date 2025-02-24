@@ -73,7 +73,7 @@ private slots:
 	{
 		QFile::remove("out/in3.tmp");
 		QFile::copy(TESTDATA("data/in3.txt"), "out/in3.tmp");
-		REMOVE_LINES("out/in3.tmp", QRegExp("fourth"))
+        REMOVE_LINES("out/in3.tmp", QRegularExpression("fourth"))
 		COMPARE_FILES("out/in3.tmp", TESTDATA("data/in1.txt"))
 	}
 
@@ -147,7 +147,7 @@ private slots:
 	{
 		QFile::remove("out/in3.tmp");
 		QFile::copy(TESTDATA("data/in3.txt"), "out/in3.tmp");
-		REMOVE_LINES("out/in3.tmp", QRegExp("string not present"))
+        REMOVE_LINES("out/in3.tmp", QRegularExpression("string not present"))
 		COMPARE_FILES("out/in3.tmp", TESTDATA("data/in1.txt"))
 	}
 

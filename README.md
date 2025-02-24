@@ -56,6 +56,6 @@ The test executable can be invoked with these parameters:
  * `EXECUTE(toolname, arguments)` Executes a tool from the same folder and checks the error code.
  * `EXECUTE_FAIL(toolname, arguments)` Executes a tool from the same folder and ignores the error code.
  * `TESTDATA(filename)` Locates test data relative to the test source file.
- * `REMOVE_LINES(filename, regexp)` Removes lines that match the given _QRegExp_ form a file.
+ * `REMOVE_LINES(filename, regexp)` Removes lines that match the given _QRegularExpression_ form a file.
  * `COMPARE_FILES(actual, expected)` File equality check.
  * `COMPARE_GZ_FILES(actual, expected)` File equality check for gzipped files.
