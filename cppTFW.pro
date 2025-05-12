@@ -12,7 +12,7 @@ QMAKE_CXXFLAGS_RELEASE *= -O3
 
 #include cppCORE library
 INCLUDEPATH += $$PWD/../cppCORE
-LIBS += -L$$PWD/../../bin -lcppCORE
+LIBS += -L$$PWD/../build/bin -lcppCORE
 
 #include zlib library
 LIBS += -lz
