@@ -20,6 +20,7 @@
 #include "Exceptions.h"
 #include "Helper.h"
 
+//TODO: clean up log files of the test before running it
 namespace TFW
 {
     //############## helper functions ##################
