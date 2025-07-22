@@ -15,7 +15,6 @@
 #include <QMetaObject>
 #include <QMetaMethod>
 #include <QRegularExpression>
-#include "zlib.h"
 #include <cmath>
 #include "Exceptions.h"
 #include "Helper.h"
@@ -398,31 +397,22 @@ namespace TFW
 
 	inline QString comareFilesGZ(QString actual, QString expected)
 	{
-		//init buffer
-		QByteArray buffer(1024, ' ');
-
 		//make file names absolute
 		actual = QFileInfo(actual).absoluteFilePath();
 		expected = QFileInfo(expected).absoluteFilePath();
 
 		//open streams
-		gzFile streama = gzopen(actual.toUtf8().data(),"rb");
-		if (streama == NULL)  return "Could not open file '" + actual + "' for reading!";
-		gzFile streame = gzopen(expected.toUtf8().data(),"rb");
-		if (streame == NULL)  return "Could not open file '" + expected + "' for reading!";
+		VersatileFile streama(actual);
+		streama.open();
+		VersatileFile streame(actual);
+		streame.open();
 
 		//compare lines
 		int line_nr = 1;
-		while (!gzeof(streama) && !gzeof(streame))
+		while (!streama.atEnd() && !streame.atEnd())
 		{
-			gzgets(streama, buffer.data(), 1024);
-			QByteArray aline = QByteArray(buffer.data());
-			while (aline.endsWith('\n') || aline.endsWith('\0') || aline.endsWith('\r')) aline.chop(1);
-
-			gzgets(streame, buffer.data(), 1024);
-			QByteArray eline = QByteArray(buffer.data());
-			while (eline.endsWith('\n') || eline.endsWith('\0') || eline.endsWith('\r')) eline.chop(1);
-
+			QByteArray aline = streama.readLine(true);
+			QByteArray eline = streame.readLine(true);
 			if (eline!=aline)
 			{
 				return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
@@ -431,12 +421,8 @@ namespace TFW
 		}
 
 		//check if line counts differ
-		if (!gzeof(streama)) return "Actual file '" + actual + "' has more lines than expected file '" + expected + "'!";
-		if (!gzeof(streame)) return "Actual file '" + actual + "' has less lines than expected file '" + expected + "'!";
-
-		//close streams
-		gzclose(streama);
-		gzclose(streame);
+		if (!streama.atEnd()) return "Actual file '" + actual + "' has more lines than expected file '" + expected + "'!";
+		if (!streame.atEnd()) return "Actual file '" + actual + "' has less lines than expected file '" + expected + "'!";
 
 		return "";
 	}
