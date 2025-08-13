@@ -135,6 +135,8 @@ namespace TFW
 		outstream.open(stdout, QFile::WriteOnly);
 
 		//run tests
+		QElapsedTimer timer_all;
+		timer_all.start();
 		QElapsedTimer timer;
 		int c_failed = 0;
 		int c_skipped = 0;
@@ -260,6 +262,7 @@ namespace TFW
 		outstream.write("PASSED : " + QByteArray::number(c_passed).rightJustified(3, ' ') + "\n");
 		outstream.write("SKIPPED: " + QByteArray::number(c_skipped).rightJustified(3, ' ') + "\n");
 		outstream.write("FAILED : " + QByteArray::number(c_failed).rightJustified(3, ' ') + "\n");
+		outstream.write("TIME   : " + Helper::elapsedTime(timer_all, true) + "\n");
 		outstream.close();
 
 		return c_failed;
