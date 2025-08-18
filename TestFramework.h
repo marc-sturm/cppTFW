@@ -50,14 +50,28 @@ namespace TFW
 
 	inline QByteArray findTestDataFile(QByteArray sourcefile, QByteArray testfile)
 	{
-		QByteArray path = QFileInfo(sourcefile).path().toUtf8() + "/" + testfile;
-		path.replace("\\", "/").replace("//", "/");
-		while(path.contains('/') && !QFile::exists(path))
-		{
-			path = path.mid(path.indexOf('/')+1);
-		}
-		if (!QFile::exists(path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "'!");
-		return  path;
+        QString bin_folder = QFileInfo(sourcefile).absoluteDir().currentPath();
+        QString root_folder = QFileInfo(bin_folder).absolutePath();
+
+        QList<QByteArray> src_path_parts = sourcefile.split('/');
+        QString project_folder = sourcefile;
+        if (src_path_parts.size()>1)
+        {
+            project_folder = src_path_parts[src_path_parts.size()-2];
+        }
+
+        QString final_path;
+        if (testfile.startsWith("out/"))
+        {
+            final_path = bin_folder + "/" +testfile;
+        }
+        else
+        {
+            final_path = root_folder + "/src/" + project_folder + "/" + testfile;
+        }
+
+        if (!QFile::exists(final_path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "'!");
+        return final_path.toLatin1();
 	}
 
 	//################## status variables ####################
