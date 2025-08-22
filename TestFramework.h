@@ -18,6 +18,7 @@
 #include <cmath>
 #include "Exceptions.h"
 #include "Helper.h"
+#include "VersatileFile.h"
 
 namespace TFW
 {
