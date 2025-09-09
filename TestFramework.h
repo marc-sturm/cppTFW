@@ -152,13 +152,13 @@ namespace TFW
 				test_cpp_file = test_cpp_file.replace("\\", "/");
 				test_cpp_file = test_cpp_file.replace("//", "/");
 
-				//strip '../' from the start until the path is relative to the root folder
-				while(!QFile::exists(root_folder + "/" + test_cpp_file) && test_cpp_file.startsWith("../"))
+				//strip '../' from the start until the path is relative to the src/ folder
+				while(!QFile::exists(root_folder + "/src/" + test_cpp_file) && test_cpp_file.startsWith("../"))
 				{
 					test_cpp_file = test_cpp_file.mid(3);
 				}
 
-				test_cpp_file = root_folder + "/" + test_cpp_file;
+				test_cpp_file = root_folder + "/src/" + test_cpp_file;
 			}
 
 			final_path = QFileInfo(test_cpp_file).absolutePath().toUtf8() + "/" + testfile;
