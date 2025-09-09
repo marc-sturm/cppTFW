@@ -132,6 +132,8 @@ namespace TFW
 
 	inline QByteArray findTestDataFile(QByteArray test_cpp_file, QByteArray testfile)
 	{
+		QByteArray test_cpp_file_original = test_cpp_file;
+
 		//current path is 'bin/' folder
 		QByteArray root_folder = QFileInfo(QDir::currentPath()).absolutePath().toUtf8();
 		QByteArray final_path;
@@ -162,7 +164,7 @@ namespace TFW
 			final_path = QFileInfo(test_cpp_file).absolutePath().toUtf8() + "/" + testfile;
 		}
 
-        if (!QFile::exists(final_path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "'!");
+		if (!QFile::exists(final_path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "' relative to '"+test_cpp_file_original+"'. It's not at: " + final_path);
 		return final_path;
 	}
 
