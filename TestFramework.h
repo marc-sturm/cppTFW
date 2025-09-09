@@ -22,6 +22,87 @@
 
 namespace TFW
 {
+    class TestExecutor
+    {
+    public:
+        TestExecutor()
+        {
+        }
+
+        const QByteArray& name() const
+        {
+            return name_;
+        }
+        void setName(const QByteArray& name)
+        {
+            name_ = name;
+        }
+
+        int testCount()
+        {
+            return tests_.count();
+        }
+        QByteArray methodName(int i)
+        {
+            return tests_[i].first;
+        }
+        std::function<void()> method(int i)
+        {
+            return tests_[i].second;
+        }
+
+		//Get log file of last executeTool call
+		QString lastLogFile()
+		{
+			return last_log_;
+		}
+
+		///Executes a tool and returns (1) if the execution was successful (2) the error message if it was not successful
+		QString executeTool(QString toolname, QString arguments, bool ignore_error_code, QString file, int line)
+		{
+			if (QFile::exists(toolname)) //Linux
+			{
+				toolname = "./" + toolname;
+			}
+			else if (QFile::exists(toolname + ".exe")) //Windows
+			{
+				toolname = toolname + ".exe";
+			}
+			else
+			{
+				return "Tool '" + toolname + "' not found!";
+			}
+
+			QProcess process;
+			last_log_ = "out/" + QFileInfo(file).baseName() + "_line" + QString::number(line) + ".log";
+			process.setProcessChannelMode(QProcess::MergedChannels);
+			process.setStandardOutputFile(last_log_);
+			QStringList arg_split = arguments.split(' ');
+			for(int i=0; i<arg_split.count(); ++i)
+			{
+				arg_split[i].replace("%20", " ");
+			}
+			process.start(toolname, arg_split);
+			bool started = process.waitForStarted(-1);
+			bool finished = process.waitForFinished(-1);
+			int exit_code = process.exitCode();
+			if (!started || !finished || (!ignore_error_code && exit_code!=0))
+			{
+				QByteArray result = "exit code: " + QByteArray::number(exit_code);
+				QFile tmp_file(last_log_);
+				tmp_file.open(QFile::ReadOnly|QFile::Text);
+				result += "\ntool output:\n" + tmp_file.readAll().trimmed();
+				return result;
+			}
+			return "";
+		}
+
+    protected:
+        QByteArray name_;
+        QList<QPair<QByteArray, std::function<void()>>> tests_;
+		QString last_log_;
+    };
+
 	//############## helper functions ##################
 
 	inline QByteArray name(QString filename)
@@ -49,30 +130,40 @@ namespace TFW
 		return a==e;
 	}
 
-	inline QByteArray findTestDataFile(QByteArray sourcefile, QByteArray testfile)
+	inline QByteArray findTestDataFile(QByteArray test_cpp_file, QByteArray testfile)
 	{
-        QString bin_folder = QFileInfo(sourcefile).absoluteDir().currentPath();
-        QString root_folder = QFileInfo(bin_folder).absolutePath();
+		//current path is 'bin/' folder
+		QByteArray root_folder = QFileInfo(QDir::currentPath()).absolutePath().toUtf8();
+		QByteArray final_path;
 
-        QList<QByteArray> src_path_parts = sourcefile.split('/');
-        QString project_folder = sourcefile;
-        if (src_path_parts.size()>1)
-        {
-            project_folder = src_path_parts[src_path_parts.size()-2];
-        }
+		//special handling of test data from 'bin/out/' folder
+		if (testfile.startsWith("out/"))
+		{
+			final_path = root_folder + "/bin/" + testfile;
+		}
+		else // the test file is relative to the CPP file
+		{
+			//make CPP file an absolute path (in some compilers __FILE__ is relative to the build folder, which in turn depends on the Qt version)
+			if (QFileInfo(test_cpp_file).isRelative())
+			{
+				//normalize CPP file path
+				test_cpp_file = test_cpp_file.replace("\\", "/");
+				test_cpp_file = test_cpp_file.replace("//", "/");
 
-        QString final_path;
-        if (testfile.startsWith("out/"))
-        {
-            final_path = bin_folder + "/" +testfile;
-        }
-        else
-        {
-            final_path = root_folder + "/src/" + project_folder + "/" + testfile;
-        }
+				//strip '../' from the start until the path is relative to the root folder
+				while(!QFile::exists(root_folder + "/" + test_cpp_file) && test_cpp_file.startsWith("../"))
+				{
+					test_cpp_file = test_cpp_file.mid(3);
+				}
+
+				test_cpp_file = root_folder + "/" + test_cpp_file;
+			}
+
+			final_path = QFileInfo(test_cpp_file).absolutePath().toUtf8() + "/" + testfile;
+		}
 
         if (!QFile::exists(final_path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "'!");
-        return final_path.toLatin1();
+		return final_path;
 	}
 
 	//################## status variables ####################
@@ -97,24 +188,24 @@ namespace TFW
 
 	//############### test execution ##################
 
-	inline QList<QObject*>& testList()
+    inline QList<TestExecutor*>& testList()
 	{
-		static QList<QObject*> list;
+        static QList<TestExecutor*> list;
 		return list;
 	}
 
-	inline void addTest(QObject* object)
-	{
-		QList<QObject*>& list = testList();
-		foreach (QObject* test, list)
+    inline void addTest(TestExecutor* test)
+    {
+        QList<TestExecutor*>& list = testList();
+        foreach (TestExecutor* test2, list)
 		{
-			if (test->objectName() == object->objectName()) return;
+			if (test2->name()==test->name()) return;
 		}
-		list.append(object);
+        list.append(test);
 	}
 
 	inline int run(int argc, char *argv[])
-	{
+    {
 		//create a QCoreApplication to be able to use a event loop (e.g. for XML validation)
 		QCoreApplication core_app(argc, argv);
 
@@ -155,10 +246,10 @@ namespace TFW
 		QElapsedTimer timer;
 		int c_failed = 0;
 		int c_skipped = 0;
-		int c_passed = 0;
-		foreach (QObject* test, testList())
+        int c_passed = 0;
+        foreach (TestExecutor* test, testList())
 		{
-			QByteArray test_name = test->objectName().toUtf8();
+            QByteArray test_name = test->name();
 
 			//delete output files of previous test runs
 			QStringList old_files = Helper::findFiles("out/", test_name.left(test_name.length()-5)+"*.*", false);
@@ -171,18 +262,13 @@ namespace TFW
 				}
 			}
 
-			const QMetaObject* object = test->metaObject();
-			for (int i=0; i<object->methodCount(); ++i)
+            for (int i=0; i<test->testCount(); ++i)
 			{
-				QMetaMethod method = object->method(i);
+                std::function<void()> method = test->method(i);
+				QByteArray method_name = test->methodName(i);
+                QByteArray test_and_method = test_name + "::" + method_name;
 
-				//filter for private slots that are not interal QT functions
-				if (object->indexOfSlot(method.methodSignature())==-1) continue;
-				if (method.access()!=QMetaMethod::Private) continue;
-				if (method.name().startsWith("_q_")) continue;
-
-				//string filter
-				QByteArray test_and_method = test_name + "::" + method.name();
+                //string filter
 				if (!test_and_method.contains(s_filter))
 				{
 					continue;
@@ -205,17 +291,16 @@ namespace TFW
 				//execute test
 				skipped() = false;
 				failed() = false;
-				message() = "";
-				bool invoked = true;
+                message() = "";
 				timer.restart();
 				try
 				{
 					if (debug_output)
 					{
-						outstream.write("Performing " + test_name + ":" + method.name() + "\n");
+                        outstream.write("Performing " + test_name + ":" + method_name + "\n");
 						outstream.flush();
 					}
-					invoked = object->invokeMethod(test, method.name());
+					method();
 				}
 				catch (Exception& e)
 				{
@@ -238,8 +323,7 @@ namespace TFW
 				{
 					message() = "unknown exception";
 					failed() = true;
-				}
-				if (!invoked) THROW(ProgrammingException, "Could not invoke test method " + test_name + "." + method.name());
+                }
 
 				//evaluate what happened
 				QByteArray result;
@@ -283,46 +367,6 @@ namespace TFW
 		return c_failed;
 	}
 
-	///Executes a tool and returns (1) if the execution was successful (2) the error message if it was not successful
-	inline QString executeTool(QString toolname, QString arguments, bool ignore_error_code, QString file, int line)
-	{
-		if (QFile::exists(toolname)) //Linux
-		{
-			toolname = "./" + toolname;
-		}
-		else if (QFile::exists(toolname + ".exe")) //Windows
-		{
-			toolname = toolname + ".exe";
-		}
-		else
-		{
-			return "Tool '" + toolname + "' not found!";
-		}
-
-		QProcess process;
-		QString log_file = "out/" + QFileInfo(file).baseName() + "_line" + QString::number(line) + ".log";
-		process.setProcessChannelMode(QProcess::MergedChannels);
-		process.setStandardOutputFile(log_file);
-		QStringList arg_split = arguments.split(' ');
-		for(int i=0; i<arg_split.count(); ++i)
-		{
-			arg_split[i].replace("%20", " ");
-		}
-		process.start(toolname, arg_split);
-		bool started = process.waitForStarted(-1);
-		bool finished = process.waitForFinished(-1);
-		int exit_code = process.exitCode();
-		if (!started || !finished || (!ignore_error_code && exit_code!=0))
-		{
-			QByteArray result = "exit code: " + QByteArray::number(exit_code);
-			QFile tmp_file(log_file);
-			tmp_file.open(QFile::ReadOnly|QFile::Text);
-			result += "\ntool output:\n" + tmp_file.readAll().trimmed();
-			return result;
-		}
-		return "";
-	}
-
 	/**
 	 * @brief comareFiles
 	 * Compares files line by line to check if they are identical, but uses a delta to check numerics
@@ -339,9 +383,9 @@ namespace TFW
 
 		//open files
 		QFile afile(actual);
-		if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toUtf8() + " for reading!";
+		if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toUtf8() + "' for reading!";
 		QFile efile(expected);
-		if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toUtf8() + " for reading!";
+		if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toUtf8() + "' for reading!";
 
 		//compare lines
 		int line_nr = 1;
@@ -476,7 +520,7 @@ namespace TFW
 	class TestCreator
 	{
 	public:
-		TestCreator(QString name)
+		TestCreator(QByteArray name)
 		{
 			//check name
 			if (!name.endsWith("_Test"))
@@ -485,8 +529,8 @@ namespace TFW
 			}
 
 			//add tests
-			QObject* inst = new T();
-			inst->setObjectName(name);
+			TestExecutor* inst = new T();
+			inst->setName(name);
 			addTest(inst);
 		}
 	};
@@ -494,9 +538,18 @@ namespace TFW
 } //namespace
 
 #define TEST_CLASS(className) \
-	class className;\
-	static TFW::TestCreator<className> t(#className);\
-	class className : public QObject
+    class className; \
+    using TestClassType = className; \
+    static TFW::TestCreator<className> t(#className); \
+    class className : public TFW::TestExecutor
+
+#define TEST_METHOD(methodName) \
+	struct Register_##methodName { \
+        Register_##methodName(TestClassType* obj) { \
+			obj->tests_.push_back({#methodName, [obj]{ obj->methodName(); }}); \
+		} \
+} reg_##methodName{this}; \
+	void methodName()
 
 #define SKIP(msg)\
 {\
@@ -608,7 +661,7 @@ namespace TFW
 
 #define EXECUTE(toolname, arguments) \
 	{\
-		QString tfw_result = TFW::executeTool(toolname, arguments, false, __FILE__, __LINE__);\
+		QString tfw_result = executeTool(toolname, arguments, false, __FILE__, __LINE__);\
 		if (tfw_result!="")\
 		{\
 			TFW::failed() = true;\
@@ -622,7 +675,7 @@ namespace TFW
 //Allows execute without propagating the error. Doesn't check for/enforce return code 1.
 #define EXECUTE_FAIL(toolname, arguments) \
 	{\
-		QString tfw_result = TFW::executeTool(toolname, arguments, true, __FILE__, __LINE__);\
+		QString tfw_result = executeTool(toolname, arguments, true, __FILE__, __LINE__);\
 		if (tfw_result!="")\
 		{\
 			TFW::failed() = true;\

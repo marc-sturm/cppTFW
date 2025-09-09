@@ -1,30 +1,31 @@
-# cppTFW
+# TestFramework.h
 Simple C++ test framework based on [Qt](http://www.qt.io), but not on _QTest_.  
 The framework consists of one header only and needs no compilation.
 
 ## Test setup
-Class tests are created by deriving a test class from _QObject_ in a header file and defining _private slots_ for each test case.  
-__SomeClass\_Test.h:__
+Class tests are created by defining a test class using the `TEST_CLASS` macro and by defining test methods using the `TEST_METHOD` macro:
+
+__SomeClass\_Test.cpp:__
 
 	#include "TestFramework.h"
 	
 	TEST_CLASS(SomeClass_Test)
 	{
-	Q_OBJECT
-	private slots:
-	
-		void TestCase1()
+	private:
+		
+		TEST_METHOD(TestMethod1)
 		{
 			I_EQUAL(1+1, 2)
 		}
 
-		void TestCase2()
+		TEST_METHOD(TestMethod2)
 		{
 			IS_FALSE(1+1==3)
 		}
 	}
 
-The execution of all test classes is executed by this simple call:  
+The all test classes are compiled into on app and executed by this simple call:
+
 __main.cpp:__
 
 	#include "TestFramework.h"
@@ -53,9 +54,21 @@ The test executable can be invoked with these parameters:
  * `IS_THROWN(exception, expression)` Checks that the _exception_ type is thrown by the _expression_.	
 
 ##File handling macros
- * `EXECUTE(toolname, arguments)` Executes a tool from the same folder and checks the error code.
- * `EXECUTE_FAIL(toolname, arguments)` Executes a tool from the same folder and ignores the error code.
+ * `EXECUTE(toolname, arguments)` Executes a tool from the same folder and checks the error code. Use TestExecutor::lastLogFile() to get the log file of the last call.
+ * `EXECUTE_FAIL(toolname, arguments)` Executes a tool from the same folder and ignores the error code. Use TestExecutor::lastLogFile() to get the log file of the last call.
  * `TESTDATA(filename)` Locates test data relative to the test source file.
- * `REMOVE_LINES(filename, regexp)` Removes lines that match the given _QRegularExpression_ form a file.
  * `COMPARE_FILES(actual, expected)` File equality check.
+ * `COMPARE_FILES_DELTA(actual, expected, delta, delta_is_percentage, separator)` File equality check with allowed numeric delta.
  * `COMPARE_GZ_FILES(actual, expected)` File equality check for gzipped files.
+ * `REMOVE_LINES(filename, regexp)` Removes lines that match the given _QRegularExpression_ form a file, e.g. a creation date that changes each time.
+
+##Other macros
+* `SKIP(msg)` Skips the current test method, e.g. because required resources are not available.
+* `TESTDATA(filename)` Locates a test data file, relative the CPP file it is used in. 
+
+#TestFrameworkNGS.h
+
+If you are working with [ngs-bits](https://github.com/imgag/ngs-bits), you can also use the following NGS-specific macros:
+
+ * `VCF_IS_VALID(vcf_file)` Checks a hg38 VCF file.
+ * `VCF_IS_VALID_HG19(vcf_file)` Checks a hg19 VCF file.
