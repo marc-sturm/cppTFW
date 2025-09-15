@@ -138,31 +138,23 @@ namespace TFW
 		QByteArray root_folder = QFileInfo(QDir::currentPath()).absolutePath().toUtf8();
 		QByteArray final_path;
 
-		//special handling of test data from 'bin/out/' folder
-		if (testfile.startsWith("out/"))
+		//make CPP file an absolute path (in some compilers __FILE__ is relative to the build folder, which in turn depends on the Qt version)
+		if (QFileInfo(test_cpp_file).isRelative())
 		{
-			final_path = root_folder + "/bin/" + testfile;
-		}
-		else // the test file is relative to the CPP file
-		{
-			//make CPP file an absolute path (in some compilers __FILE__ is relative to the build folder, which in turn depends on the Qt version)
-			if (QFileInfo(test_cpp_file).isRelative())
+			//normalize CPP file path
+			test_cpp_file = test_cpp_file.replace("\\", "/");
+			test_cpp_file = test_cpp_file.replace("//", "/");
+
+			//strip '../' from the start until the path is relative to the src/ folder
+			while(!QFile::exists(root_folder + "/src/" + test_cpp_file) && test_cpp_file.startsWith("../"))
 			{
-				//normalize CPP file path
-				test_cpp_file = test_cpp_file.replace("\\", "/");
-				test_cpp_file = test_cpp_file.replace("//", "/");
-
-				//strip '../' from the start until the path is relative to the src/ folder
-				while(!QFile::exists(root_folder + "/src/" + test_cpp_file) && test_cpp_file.startsWith("../"))
-				{
-					test_cpp_file = test_cpp_file.mid(3);
-				}
-
-				test_cpp_file = root_folder + "/src/" + test_cpp_file;
+				test_cpp_file = test_cpp_file.mid(3);
 			}
 
-			final_path = QFileInfo(test_cpp_file).absolutePath().toUtf8() + "/" + testfile;
+			test_cpp_file = root_folder + "/src/" + test_cpp_file;
 		}
+
+		final_path = QFileInfo(test_cpp_file).absolutePath().toUtf8() + "/" + testfile;
 
 		if (!QFile::exists(final_path)) THROW(ProgrammingException, "Could not find test file '" + testfile + "' relative to '"+test_cpp_file_original+"'. It's not at: " + final_path);
 		return final_path;
