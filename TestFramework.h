@@ -77,7 +77,7 @@ namespace TFW
 			last_log_ = "out/" + QFileInfo(file).baseName() + "_line" + QString::number(line) + ".log";
 			process.setProcessChannelMode(QProcess::MergedChannels);
 			process.setStandardOutputFile(last_log_);
-			QStringList arg_split = arguments.split(' ');
+			QStringList arg_split = arguments.simplified().trimmed().split(' ');
 			for(int i=0; i<arg_split.count(); ++i)
 			{
 				arg_split[i].replace("%20", " ");
