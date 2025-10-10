@@ -9,11 +9,8 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QTextStream>
-#include <QSharedPointer>
 #include <QProcess>
 #include <QDebug>
-#include <QMetaObject>
-#include <QMetaMethod>
 #include <QRegularExpression>
 #include <cmath>
 #include "Exceptions.h"
