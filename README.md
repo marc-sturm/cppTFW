@@ -69,6 +69,11 @@ The test executable can be invoked with these parameters:
 #TestFrameworkNGS.h
 
 If you are working with [ngs-bits](https://github.com/imgag/ngs-bits), you can also use the following NGS-specific macros:
-
+	
+ * `SKIP_IF_NO_TEST_NGSD()` Skips a test if NGSD test instance is not available.
+ * `SKIP_IF_NO_PROD_NGSD()` Skips a test if NGSD production instance is not available.
+ * `SKIP_IF_NO_PROD_GENLAB()` Skips a test if GenLab production instance is not available.
+ * `SKIP_IF_NO_HG38_GENOME()` Skips a test if the HG38 reference genoe is not available.
+ * `SKIP_IF_NO_HG19_GENOME()` Skips a test if the HG19 reference genoe is not available.
  * `VCF_IS_VALID(vcf_file)` Checks a hg38 VCF file.
  * `VCF_IS_VALID_HG19(vcf_file)` Checks a hg19 VCF file.
