@@ -4,6 +4,7 @@
 #include "TestFramework.h"
 #include "VcfFile.h"
 #include "Settings.h"
+#include "BamReader.h"
 
 #define SKIP_IF_NO_TEST_NGSD()\
 {\
@@ -95,6 +96,25 @@
 			return;\
 		}\
 	}\
+}
+
+
+#define BAM_TO_TEXT(bam_file, txt_file)\
+{\
+	QFile out(txt_file);\
+	out.open(QIODevice::WriteOnly);\
+	BamReader reader(bam_file);\
+	BamAlignment al;\
+	while(reader.getNextAlignment(al))\
+	{\
+		QByteArrayList line;\
+		line << reader.chromosome(al.chromosomeID()).str() << QByteArray::number(al.start()) << QByteArray::number(al.end());\
+		line << QByteArray::number(al.mappingQuality()) << QByteArray::number(al.insertSize()) << al.cigarDataAsString();\
+		line << al.bases();\
+		line << al.qualities();\
+		out.write(line.join("\t") + "\n");\
+	}\
+	out.close();\
 }
 
 #endif // TESTFRAMEWORK_H

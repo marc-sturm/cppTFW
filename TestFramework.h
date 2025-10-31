@@ -451,31 +451,40 @@ namespace TFW
 	inline QString comareFilesGZ(QString actual, QString expected)
 	{
 		//make file names absolute
-		actual = QFileInfo(actual).absoluteFilePath();
-		expected = QFileInfo(expected).absoluteFilePath();
+		QFileInfo a_info(actual);
+		actual = a_info.absoluteFilePath();
+		QFileInfo e_info(expected);
+		expected = e_info.absoluteFilePath();
 
-		//open streams
-		VersatileFile streama(actual);
-		streama.open();
-		VersatileFile streame(actual);
-		streame.open();
-
-		//compare lines
-		int line_nr = 1;
-		while (!streama.atEnd() && !streame.atEnd())
+		if (a_info.suffix()=="gz" && e_info.suffix()=="gz")
 		{
-			QByteArray aline = streama.readLine(true);
-			QByteArray eline = streame.readLine(true);
-			if (eline!=aline)
-			{
-				return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
-			}
-			++line_nr;
-		}
+			//open streams
+			VersatileFile streama(actual);
+			streama.open();
+			VersatileFile streame(actual);
+			streame.open();
 
-		//check if line counts differ
-		if (!streama.atEnd()) return "Actual file '" + actual + "' has more lines than expected file '" + expected + "'!";
-		if (!streame.atEnd()) return "Actual file '" + actual + "' has less lines than expected file '" + expected + "'!";
+			//compare lines
+			int line_nr = 1;
+			while (!streama.atEnd() && !streame.atEnd())
+			{
+				QByteArray aline = streama.readLine(true);
+				QByteArray eline = streame.readLine(true);
+				if (eline!=aline)
+				{
+					return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
+				}
+				++line_nr;
+			}
+
+			//check if line counts differ
+			if (!streama.atEnd()) return "Actual file '" + actual + "' has more lines than expected file '" + expected + "'!";
+			if (!streame.atEnd()) return "Actual file '" + actual + "' has less lines than expected file '" + expected + "'!";
+		}
+		else
+		{
+			return "Unsupported GZ file extensions: " + a_info.suffix() + "/" + e_info.suffix();
+		}
 
 		return "";
 	}
