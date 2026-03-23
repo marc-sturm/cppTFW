@@ -1,7 +1,7 @@
 #ifndef TESTFRAMEWORK_H
 #define TESTFRAMEWORK_H
 
-#include <QCoreApplication>
+#include <QApplication>
 #include <QCommandLineParser>
 #include <QList>
 #include <QString>
@@ -197,8 +197,8 @@ namespace TFW
 
 	inline int run(int argc, char *argv[])
     {
-		//create a QCoreApplication to be able to use a event loop (e.g. for XML validation)
-		QCoreApplication core_app(argc, argv);
+		//create a QApplication to be able to use a event loop (e.g. for XML validation)
+		QApplication core_app(argc, argv);
 
 		//parse command line parameters
 		QCommandLineParser parser;
