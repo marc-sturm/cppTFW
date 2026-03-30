@@ -57,9 +57,8 @@ The test executable can be invoked with these parameters:
  * `EXECUTE(toolname, arguments)` Executes a tool from the same folder and checks the error code. Use lastLogFile() to get the log file of the last call.
  * `EXECUTE_FAIL(toolname, arguments)` Executes a tool from the same folder and ignores the error code. Use lastLogFile() to get the log file of the last call.
  * `TESTDATA(filename)` Locates test data relative to the test source file.
- * `COMPARE_FILES(actual, expected)` File equality check.
- * `COMPARE_FILES_DELTA(actual, expected, delta, delta_is_percentage, separator)` File equality check with custom accuracy for numeric values.
- * `COMPARE_GZ_FILES(actual, expected)` File equality check for gzipped files.
+ * `COMPARE_FILES(actual, expected)` File equality check (gzipped or plain files).
+ * `COMPARE_FILES_DELTA(actual, expected, delta, delta_is_percentage, separator)` File equality check with custom accuracy for numeric values (gzipped or plain files).
  * `REMOVE_LINES(filename, regexp)` Removes lines that match the given _QRegularExpression_ form a file, e.g. a creation date that changes each time.
 
 ##Other macros
