@@ -382,8 +382,8 @@ namespace TFW
 		int line_nr = 1;
 		while (!astream.atEnd() && !estream.atEnd())
 		{
-			QString aline = astream.readLine();
-			QString eline = estream.readLine();
+			QString aline = astream.readLine(true);
+			QString eline = estream.readLine(true);
 			if(aline!=eline)
 			{
 				//not delta allowed > no numeric comparison
