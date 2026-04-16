@@ -375,7 +375,7 @@ namespace TFW
 		//open files
 		VersatileFile astream(actual);
 		astream.open();
-		VersatileFile estream(actual);
+		VersatileFile estream(expected);
 		estream.open();
 
 		//compare lines
