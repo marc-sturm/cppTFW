@@ -462,7 +462,7 @@ namespace TFW
 		file.close();
 
 		//store output
-		if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return "Could not open file '" + filename + " for writing!";
+		if (!file.open(QIODevice::WriteOnly)) return "Could not open file '" + filename + " for writing!";
 		foreach(const QByteArray& line, output)
 		{
 			file.write(line);
