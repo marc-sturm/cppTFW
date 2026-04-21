@@ -373,19 +373,17 @@ namespace TFW
 	   expected = QFileInfo(expected).absoluteFilePath();
 
 		//open files
-		QFile afile(actual);
-		if (!afile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open actual file '" + actual.toUtf8() + "' for reading!";
-		QFile efile(expected);
-		if (!efile.open(QIODevice::ReadOnly | QIODevice::Text)) return "Could not open expected file '" + expected.toUtf8() + "' for reading!";
+		VersatileFile astream(actual);
+		astream.open();
+		VersatileFile estream(expected);
+		estream.open();
 
 		//compare lines
 		int line_nr = 1;
-		QTextStream astream(&afile);
-		QTextStream estream(&efile);
 		while (!astream.atEnd() && !estream.atEnd())
 		{
-			QString aline = astream.readLine();
-			QString eline = estream.readLine();
+			QString aline = astream.readLine(true);
+			QString eline = estream.readLine(true);
 			if(aline!=eline)
 			{
 				//not delta allowed > no numeric comparison
@@ -448,47 +446,6 @@ namespace TFW
 		return "";
 	}
 
-	inline QString comareFilesGZ(QString actual, QString expected)
-	{
-		//make file names absolute
-		QFileInfo a_info(actual);
-		actual = a_info.absoluteFilePath();
-		QFileInfo e_info(expected);
-		expected = e_info.absoluteFilePath();
-
-		if (a_info.suffix()=="gz" && e_info.suffix()=="gz")
-		{
-			//open streams
-			VersatileFile streama(actual);
-			streama.open();
-			VersatileFile streame(actual);
-			streame.open();
-
-			//compare lines
-			int line_nr = 1;
-			while (!streama.atEnd() && !streame.atEnd())
-			{
-				QByteArray aline = streama.readLine(true);
-				QByteArray eline = streame.readLine(true);
-				if (eline!=aline)
-				{
-					return "Differing line "  + QByteArray::number(line_nr) + "\nactual   : " + aline + "\nexpected : " + eline;
-				}
-				++line_nr;
-			}
-
-			//check if line counts differ
-			if (!streama.atEnd()) return "Actual file '" + actual + "' has more lines than expected file '" + expected + "'!";
-			if (!streame.atEnd()) return "Actual file '" + actual + "' has less lines than expected file '" + expected + "'!";
-		}
-		else
-		{
-			return "Unsupported GZ file extensions: " + a_info.suffix() + "/" + e_info.suffix();
-		}
-
-		return "";
-	}
-
 	inline QString removeLinesMatching(QString filename, QRegularExpression regexp)
 	{
 		QFile file(filename);
@@ -505,7 +462,7 @@ namespace TFW
 		file.close();
 
 		//store output
-		if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return "Could not open file '" + filename + " for writing!";
+		if (!file.open(QIODevice::WriteOnly)) return "Could not open file '" + filename + " for writing!";
 		foreach(const QByteArray& line, output)
 		{
 			file.write(line);
@@ -711,19 +668,6 @@ namespace TFW
 						return;\
 				}\
 		}
-
-#define COMPARE_GZ_FILES(actual, expected)\
-	{\
-		QString tfw_result = TFW::comareFilesGZ(actual, expected);\
-		if (tfw_result!="")\
-		{\
-			TFW::failed() = true;\
-			TFW::message() = "COMPARE_GZ_FILES(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
-						   + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
-						   + "message  : " + tfw_result.toUtf8();\
-			return;\
-		}\
-	}
 
 #define REMOVE_LINES(filename, regexp)\
 	{\
