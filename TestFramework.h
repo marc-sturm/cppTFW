@@ -1,7 +1,7 @@
 #ifndef TESTFRAMEWORK_H
 #define TESTFRAMEWORK_H
 
-#include <QCoreApplication>
+#include <QApplication>
 #include <QCommandLineParser>
 #include <QList>
 #include <QString>
@@ -12,6 +12,7 @@
 #include <QProcess>
 #include <QDebug>
 #include <QRegularExpression>
+#include <QImage>
 #include <cmath>
 #include "Exceptions.h"
 #include "Helper.h"
@@ -197,8 +198,8 @@ namespace TFW
 
 	inline int run(int argc, char *argv[])
     {
-		//create a QCoreApplication to be able to use a event loop (e.g. for XML validation)
-		QCoreApplication core_app(argc, argv);
+		//create a QApplication to be able to use a event loop (e.g. for XML validation)
+		QApplication core_app(argc, argv);
 
 		//parse command line parameters
 		QCommandLineParser parser;
@@ -446,6 +447,69 @@ namespace TFW
 		return "";
 	}
 
+	/**
+	 * @brief comparePngFiles
+	 * Compares two PNG images pixel by pixel using normalized RGB distance,
+	 * optionally ignoring pixels where both images match the specified ignored_color.
+	 * Returns an empty string if the similarity score meets the cutoff threshold;
+	 * otherwise returns an error message with the calculated similarity.
+	 * @param actual
+	 * @param expected
+	 * @param cutoff
+	 * @return empty string on success, otherwise return a message saying how much the images are different (value between 0 and 1)
+	 */
+	inline QString comarePngFiles(QString actual, QString expected, double cutoff, QColor ignored_color)
+	{
+		QImage actual_image(actual);
+		QImage expected_image(expected);
+
+		if (actual_image.isNull() || expected_image.isNull()) THROW(FileAccessException, "Failed to load one or both images.");
+
+		if (actual_image.size() != expected_image.size()) return "Images have different dimentions";
+
+		actual_image = actual_image.convertToFormat(QImage::Format_RGB32);
+		expected_image = expected_image.convertToFormat(QImage::Format_RGB32);
+
+		const int width = actual_image.width();
+		const int height = actual_image.height();
+
+		double squared_distance = 0.0;
+		int compared_pixels = 0;
+
+		for (int y=0; y<height; y++)
+		{
+			QRgb* line_actual = reinterpret_cast<QRgb*>(actual_image.scanLine(y));
+			QRgb* line_expected = reinterpret_cast<QRgb*>(expected_image.scanLine(y));
+
+			for (int x=0; x<width; x++)
+			{
+				QColor color_actual(line_actual[x]);
+				QColor color_expected(line_expected[x]);
+
+				// Ignore pixels, if both are ignored_color
+				if (color_actual == ignored_color && color_expected == ignored_color) continue;
+
+				//calculate squared distance
+				int dr = qRed(line_actual[x]) - qRed(line_expected[x]);
+				int dg = qGreen(line_actual[x]) - qGreen(line_expected[x]);
+				int db = qBlue(line_actual[x]) - qBlue(line_expected[x]);
+				squared_distance += dr * dr + dg * dg + db * db;
+
+				//count used pixels
+				compared_pixels++;
+			}
+		}
+
+		if (compared_pixels == 0) return ""; // ignored all pixels => identical images
+		double similarity = 1.0 - (squared_distance / (compared_pixels*3.0 * 255.0 * 255.0));
+		if (similarity < cutoff)
+			return "The similarity score for the images is insufficient: got "
+				   + QString::number(similarity)
+				   + ", but expected at least "
+				   + QString::number(cutoff);
+		return "";
+	}
+
 	inline QString removeLinesMatching(QString filename, QRegularExpression regexp)
 	{
 		QFile file(filename);
@@ -655,6 +719,19 @@ namespace TFW
 			return;\
 		}\
 	}
+
+#define COMPARE_PNG_FILES(actual, expected, cutoff, ignored_color)\
+{\
+		QString tfw_result = TFW::comarePngFiles(actual, expected, cutoff, ignored_color);\
+		if (tfw_result!="")\
+	{\
+			TFW::failed() = true;\
+			TFW::message() = "COMPARE_PNG_FILES(" + QByteArray(#actual) + ", " + QByteArray(#expected) + ") failed\n"\
+			  + "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__) + "\n"\
+			  + "message  : " + tfw_result.toUtf8();\
+			return;\
+	}\
+}
 
 #define COMPARE_FILES_DELTA(actual, expected, delta, delta_is_percentage, separator)\
 		{\
