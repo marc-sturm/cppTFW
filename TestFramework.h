@@ -474,7 +474,6 @@ namespace TFW
 		const int height = actual_image.height();
 
 		double squared_distance = 0.0;
-		double max_squared_distance = 0.0;
 		int compared_pixels = 0;
 
 		for (int y=0; y<height; y++)
@@ -490,20 +489,19 @@ namespace TFW
 				// Ignore pixels, if both are ignored_color
 				if (color_actual == ignored_color && color_expected == ignored_color) continue;
 
+				//calculate squared distance
 				int dr = qRed(line_actual[x]) - qRed(line_expected[x]);
 				int dg = qGreen(line_actual[x]) - qGreen(line_expected[x]);
 				int db = qBlue(line_actual[x]) - qBlue(line_expected[x]);
-
 				squared_distance += dr * dr + dg * dg + db * db;
 
-				// Max possible distance for one RGB pixel
-				max_squared_distance += 3.0 * 255.0 * 255.0;
+				//count used pixels
 				compared_pixels++;
 			}
 		}
 
 		if (compared_pixels == 0) return ""; // ignored all pixels => identical images
-		double similarity = 1.0 - (squared_distance / max_squared_distance);
+		double similarity = 1.0 - (squared_distance / (compared_pixels*3.0 * 255.0 * 255.0));
 		if (similarity < cutoff)
 			return "The similarity score for the images is insufficient: got "
 				   + QString::number(similarity)
