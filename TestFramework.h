@@ -198,6 +198,8 @@ namespace TFW
 
 	inline int run(int argc, char *argv[])
     {
+		qputenv("QT_QPA_FONTDIR", "."); // prevents errors from QFontDatabase
+		qputenv("QT_QPA_PLATFORM", "offscreen"); // handles headless mode for testing plots
 		//create a QApplication to be able to use a event loop (e.g. for XML validation)
 		QApplication core_app(argc, argv);
 
