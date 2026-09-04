@@ -50,18 +50,6 @@
 	}\
 }
 
-
-#define SKIP_IF_NO_HG19_GENOME()\
-{\
-	if (Settings::string("reference_genome_hg19", true)=="")\
-	{\
-		TFW::skipped() = true;\
-		TFW::message() = QByteArray("Test needs the HG19 reference genome!\n")\
-		+ "location : " + TFW::name(__FILE__) + ":" + TFW::number(__LINE__);\
-		return;\
-	}\
-}
-
 #define VCF_IS_VALID(vcf_file)\
 {\
     QString ref_file = Settings::string("reference_genome", true);\
